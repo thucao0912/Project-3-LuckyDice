@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Task 23B.60 </title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> 
+  <style>
+    .picture-cover {
+        background-image: url("images/cover.jpg");
+        min-height: 100px;
+        margin: 5px;
+    }
+  </style>
+</head>
+<body>
+    <div class="container-fluid picture-cover">
+
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-5">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h4>Input your information</h4>
+                        <p style="font-style: italic;">(Try with : "ngado20", "nga", "do")</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label>Username</label>   
+                    </div>
+                    <div class="col-sm-8">
+                        <input id="inp-username" class="form-control" type="text">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label>Firstname</label>
+                    </div>
+                    <div class="col-sm-8">
+                        <input id="inp-firstname" class="form-control" type="text">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label>Lastname</label>
+                    </div>
+                    <div class="col-sm-8">
+                        <input id="inp-lastname" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 text-center">
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <input id="btn-throw-dice" class="btn btn-success button-width w-75" value="Throw" type="button" onclick="onBtnThrowClick()">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <img id="img-dice" class="img-thumbnail" src="images/dice.png">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <p id="p-notification-dice">Congrat!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3 text-center">
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <p>Voucher</p>
+                        <p id="p-voucher-id">No ID</p>
+                        <p id="p-voucher-percent">0%</p>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <img id="img-prize" class="img-thumbnail" src="images/xe-may.jpg">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row text-center form-group">
+            <div class="col-sm-12">
+                <button id="btn-dice-history" class="btn btn-info button-width w-25" onclick="onBtnShowHistoryClick()">Dice History</button>
+                <button id="btn-voucher-history" class="btn btn-success button-width w-25">Voucher History</button>
+                <button id="btn-prize-history" class="btn btn-success button-width w-25">Prize History</button>
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-12">
+                <table id="table-history-placeholder" class="table border table-striped table-hover">
+                    <tr>
+                        <th>Game</th>
+                        <th>Dice</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>2</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>6</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>4</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>5</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>4</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    "use strict";
+
+    /** Global variables */
+    const gREQUEST_STATUS_OK = 200;
+    const gREQUEST_READY_STATUS_FINISH_AND_OK = 4;
+    const gBASE_URL = "http://203.171.20.210:8080/devcamp-lucky-dice/";
+    const gUTF8_TEXT_APPLICATION_HEADER = "application/json;charset=UTF-8"
+    
+    var gUserInfo = {
+        username: "",
+        firstname: "",
+        lastname: ""
+    }
+
+    /** Function for event handlers */
+
+    // function when button Throw is clicked
+    function onBtnThrowClick () {
+        "use strict";
+
+        readDataFromForm (gUserInfo);
+        if(!validateData (gUserInfo))
+            return;
+        console.log (gUserInfo);
+
+        // After info is validated, call Api to get data from server
+        var vXmlHttpDice = new XMLHttpRequest ();
+        callApiAddNewDice (vXmlHttpDice, gUserInfo);
+
+        // process data after request successfully from server
+        vXmlHttpDice.onreadystatechange = function () {
+            if (this.readyState != gREQUEST_READY_STATUS_FINISH_AND_OK || this.status != gREQUEST_STATUS_OK)
+            return;
+            processResponse (vXmlHttpDice);
+        }
+    }
+
+    // function when button dice history is clicked
+    function onBtnShowHistoryClick () {
+        console.log ("Button Dice history is clicked...");
+
+        // S1: read data from form
+        readDataFromForm(gUserInfo);
+
+        //S2: validate data
+        if(!validateData (gUserInfo))
+        return;
+
+        //S3: After info is validated, call Api to get history data from server
+        var vXmlHttpHistory = new XMLHttpRequest ();
+        callApiGetHistory (vXmlHttpHistory, gUserInfo);
+
+        // process data after request successfully from server
+        vXmlHttpHistory.onreadystatechange = function () {
+
+            if (this.readyState != gREQUEST_READY_STATUS_FINISH_AND_OK || this.status != gREQUEST_STATUS_OK)
+            return;
+            console.log ("History responseText: " + this.responseText);
+            //S4: Load data from server to table and display
+            loadHistoryToTable (vXmlHttpHistory);
+        }
+    }
+
+    /** Common used function */
+    
+    // function to read data from form and fill in gUserInfo
+    function readDataFromForm (paramObj) {
+        "use strict";
+
+        var vUsername = document.getElementById ("inp-username");
+        var vFirstname = document.getElementById ("inp-firstname");
+        var vLastname = document.getElementById ("inp-lastname");
+
+        paramObj.username = vUsername.value.trim();
+        paramObj.firstname = vFirstname.value.trim();
+        paramObj.lastname = vLastname.value.trim();
+    }
+
+    // function to validate data of user input
+    function validateData (paramObj) {
+        "use strict";
+
+        if (paramObj.username == "" || paramObj.firstname == "" || paramObj.lastname == "") {
+            alert ("Information cannot be empty");
+            return false;
+        }
+
+        return true;
+    }
+
+    // function to
+    function callApiAddNewDice (paramXmlHttp, paramObj) {
+
+        //debugger;
+        // transfer gUserInfo -> string
+        var vUserInfoJsonString = JSON.stringify(paramObj);
+        paramXmlHttp.open ("POST", gBASE_URL + "/dice", true); // call server
+        paramXmlHttp.setRequestHeader ("Content-type", gUTF8_TEXT_APPLICATION_HEADER)
+        paramXmlHttp.send(vUserInfoJsonString);
+
+        
+    }
+
+    // function to handle returned data from server
+    function processResponse (paramXmlHttp) {
+        console.log ("ResponseText: " + paramXmlHttp.responseText);
+        // parsing JSON -> object
+        var vResponseObj = JSON.parse (paramXmlHttp.responseText);
+        console.log (vResponseObj);
+
+        // get dice result
+        var vDiceReady = vResponseObj.dice;
+        console.log ("Dice result: " + vDiceReady);
+
+        // call function to change dice image
+        changeDiceImg (vDiceReady);
+
+        // call function to change notification
+        changeNotification (vDiceReady);
+
+        // call function to change voucher info <p> text
+        var vDiceVoucher = vResponseObj.voucher;
+        changeVoucherInfo (vDiceVoucher);
+
+        // call function to change prize image
+        var vDicePrize = vResponseObj.prize;
+        changePrizeImg (vDicePrize);
+    }
+
+    // function to change dice image according to dice result (1->6)
+    function changeDiceImg (paramDice) {
+        "use strict";
+
+        var vDiceImg = document.getElementById ("img-dice");
+        switch (paramDice) {
+
+            case 1: 
+                vDiceImg.src = "images/1.png";
+                break;
+            case 2: 
+                vDiceImg.src = "images/2.png";
+                break;
+            case 3: 
+                vDiceImg.src = "images/3.png";
+                break;
+            case 4: 
+                vDiceImg.src = "images/4.png";
+                break;
+            case 5: 
+                vDiceImg.src = "images/5.png";
+                break;
+            default: 
+                vDiceImg.src = "images/6.png";
+                break;
+        }
+    }
+
+    // function to change congrat notification when dice number changed
+    function changeNotification (paramDice) {
+        "use strict";
+
+        var vNotification = document.getElementById ("p-notification-dice");
+        if (paramDice < 4)
+        vNotification.innerHTML = "Sorry! Please try again";
+        else 
+        vNotification.innerHTML = "Congratulation!!!";
+    }
+
+    // function to change voucher info <p> text
+    function changeVoucherInfo (paramVoucher) {
+        "use strict";
+
+        var vVoucherId = document.getElementById ("p-voucher-id");
+        var vVoucherPercent = document.getElementById ("p-voucher-percent");
+            
+        if (paramVoucher != null) {
+            vVoucherId.innerHTML = paramVoucher.maVoucher;
+            vVoucherPercent.innerHTML = paramVoucher.phanTramGiamGia + "%";
+        }
+    }
+
+    // function to change prize image
+    function changePrizeImg (paramPrize) {
+        "use strict"
+        var vPrizeImg = document.getElementById ("img-prize");
+    
+        switch (paramPrize) {
+            case "Mũ":
+                vPrizeImg.src = "images/hat.webp";
+                break;
+            case "Áo":
+                vPrizeImg.src = "images/t-shirt.webp";
+                break;
+            case "Xe máy":
+                vPrizeImg.src = "images/xe-may.jpg";
+                break;
+            case "Ô tô":
+                vPrizeImg.src = "images/car.jpg";
+                break;
+            default:
+                vPrizeImg.src = "images/noprize.jpg";
+        }
+    }
+
+    // function to get history dice from server
+    function callApiGetHistory (paramXmlHttp, paramObj) {
+        paramXmlHttp.open ("GET", gBASE_URL + "/voucher-history?username=" + paramObj.username, true);
+        paramXmlHttp.send ();
+    }
+
+    // function to load history to table
+    function loadHistoryToTable (paramXmlHttp) {
+        var vHistoryObj = JSON.parse (paramXmlHttp.responseText);
+        var vTable = document.getElementById ("table-history-placeholder");
+
+        // delete rows of table: delete the 1st element until there's no element left
+        while (vTable.rows.length > 0) 
+        vTable.deleteRow(0);
+
+        // add headers to table
+        
+        var vHeader = vTable.createTHead();
+        var vNewRowHeaders = vHeader.insertRow(-1);
+
+        var vColId = vNewRowHeaders.insertCell(0);
+        vColId.innerHTML = "<b>ID</b>";
+
+        var vColVoucherCode = vNewRowHeaders.insertCell(1);
+        vColVoucherCode.innerHTML = "<b>Voucher Code</b>";
+
+        var vColPercentDiscount = vNewRowHeaders.insertCell(2);
+        vColPercentDiscount.innerHTML = "<b>Percent of Discount</b>";
+
+        var vColCreatedDate = vNewRowHeaders.insertCell(3);
+        vColCreatedDate.innerHTML = "<b>Created Date</b>";
+
+        var vColUpdatedDate = vNewRowHeaders.insertCell(4);
+        vColUpdatedDate.innerHTML = "<b>Updated Date</b>";
+
+        // add body to table
+
+        for (var bI = 0; bI < vHistoryObj.vouchers.length; bI ++) {
+            var vNewRowDetail = vTable.insertRow(-1);
+
+            var vColId = vNewRowDetail.insertCell(0);
+            vColId.innerHTML = vHistoryObj.vouchers[bI].id;
+
+            var vColVoucherCode = vNewRowDetail.insertCell(1);
+            vColVoucherCode.innerHTML = vHistoryObj.vouchers[bI].maVoucher;
+
+            var vColPercentDiscount = vNewRowDetail.insertCell(2);
+            vColPercentDiscount.innerHTML = vHistoryObj.vouchers[bI].phanTramGiamGia;
+
+            var vColCreatedDate = vNewRowDetail.insertCell(3);
+            vColCreatedDate.innerHTML = vHistoryObj.vouchers[bI].ngayTao;
+
+            var vColUpdatedDate = vNewRowDetail.insertCell(4);
+            vColUpdatedDate.innerHTML = vHistoryObj.vouchers[bI].ngayCapNhat;
+        }
+    }
+
+</script>
